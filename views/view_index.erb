@@ -8,6 +8,8 @@
   </style>
   <link rel="stylesheet" href="node_modules/material-design-lite/material.min.css">
   <script src="node_modules/material-design-lite/material.min.js"></script>
+  <script src="node_modules/vue/dist/vue.js"></script>
+  <script src="node_modules/vue-resource/dist/vue-resource.js"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 
@@ -28,8 +30,8 @@
       color: #fff;
     }
   </style>
-  <div class="mdl-layout mdl-js-layout">
-    <header class="mdl-layout__header mdl-layout__header">
+  <div id="app" class="mdl-layout mdl-js-layout">
+    <header class="mdl-layout__header mdl-layout__header mdl-layout--fixed-header">
       <div class="mdl-layout__header-row">
         <!-- Title -->
         <span class="mdl-layout-title">Checkers!</span>
@@ -46,7 +48,7 @@
           Welcome to the James' Original Checkers!
         </div>
         <div class="mdl-card__actions mdl-card--border">
-          <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">
+          <a id="id_new_game" v-on:click="new_game" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">
             Get Started
           </a>
         </div>
@@ -58,7 +60,20 @@
       </div>
     </div>
   </div>
-
+  <script>
+    var _vue1 = new Vue({
+      el: '#app',
+      data: {},
+      // define methods under the `methods` object
+      methods: {
+        new_game: function (event) {
+          this.$http.get("/new_game").then((response) => {
+            window.location.href = "\/play_game\/" + response.data;
+          });
+        }
+      }
+    });
+  </script>
 </body>
 
 </html>
