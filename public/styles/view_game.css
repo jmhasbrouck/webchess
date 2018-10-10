@@ -1,0 +1,9 @@
+div.board {
+    float: left;
+    max-width: 450px;
+    max-height: 430px;
+    width: calc(100vw - 40px);
+    height: calc(95vw - 40px);
+    margin-right: 20px;
+    margin-bottom: 20px; 
+}

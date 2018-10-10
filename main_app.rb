@@ -9,6 +9,7 @@ class MainApplication < Sinatra::Base
     super
     @semaphore = Mutex.new
     @dbclient = DBClientFactory()
+    @logger = Logger.new(STDOUT)
   end
   set :logging, true
   set :server, 'thin'
@@ -19,7 +20,7 @@ class MainApplication < Sinatra::Base
     erb :view_index
   end
 
-  get '/play_game/:id' do |id|
+  get '/game/:id' do |id|
     erb :view_game
   end
 

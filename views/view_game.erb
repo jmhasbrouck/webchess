@@ -4,29 +4,58 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <title>Welcome</title>
-  <style>
-  </style>
-  <link rel="stylesheet" href="node_modules/material-design-lite/material.min.css">
-  <script src="node_modules/material-design-lite/material.min.js"></script>
-  <script src="node_modules/vue/dist/vue.js"></script>
-  <script src="node_modules/vue-resource/dist/vue-resource.js"></script>
+  <link rel="stylesheet" href="/node_modules/material-design-lite/material.min.css">
+  <link rel="stylesheet" href="/styles/cm-chessboard.css"/>
+  <link rel="stylesheet" href="/styles/view_game.css"/>
+  <script src="/node_modules/material-design-lite/material.min.js"></script>
+  <script src="/node_modules/vue/dist/vue.js"></script>
+  <script src="/node_modules/vue-resource/dist/vue-resource.js"></script>
+  <script src="/node_modules/chess.js/chess.js"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 
 <body id="sample">
   <div id="app" class="mdl-layout mdl-js-layout">
-    
+    <div id="board" class="board">
+    </div>
   </div>
-  <script>
-    var _vue1 = new Vue({
-      el: '#app',
-      data: {},
-      // define methods under the `methods` object
-      methods: {
-        move: function (event) {
+  <script type="module">
+    import { INPUT_EVENT_TYPE, MOVE_INPUT_MODE, COLOR, Chessboard } from "/node_modules/cm-chessboard/src/cm-chessboard/Chessboard.js"
+    
+    var chess = new Chess()
+    function inputHandler(event) {
+      console.log("event", event)
+      if (event.type === INPUT_EVENT_TYPE.moveDone) {
+        const move = { from: event.squareFrom, to: event.squareTo }
+        const result = chess.move(move)
+        if (result) {
+          event.chessboard.disableMoveInput()
+          setTimeout(() => {
+            event.chessboard.setPosition(chess.fen())
+            const possibleMoves = chess.moves({ verbose: true })
+            if (possibleMoves.length > 0) {
+              const randomMove = possibleMoves[random(0, possibleMoves.length - 1)]
+              chess.move({ from: randomMove.from, to: randomMove.to })
+              event.chessboard.enableMoveInput(inputHandler, COLOR.white)
+              event.chessboard.setPosition(chess.fen())
+            }
+          })
+        } else {
+          console.warn("invalid move", move)
         }
+        return result
+      } else {
+        return true
       }
-    });
+    }
+
+    const board = new Chessboard(document.getElementById("board"), {
+      position: chess.fen(),
+      sprite: { url: "/assets/images/chessboard-sprite.svg" },
+      orientation: COLOR.white,
+      moveInputMode: MOVE_INPUT_MODE.dragPiece
+    })
+    board.enableMoveInput(inputHandler, COLOR.white)
   </script>
 </body>
 

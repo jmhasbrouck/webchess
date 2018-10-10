@@ -34,14 +34,14 @@
     <header class="mdl-layout__header mdl-layout__header mdl-layout--fixed-header">
       <div class="mdl-layout__header-row">
         <!-- Title -->
-        <span class="mdl-layout-title">Checkers!</span>
+        <span class="mdl-layout-title">Chess!</span>
       </div>
     </header>
 
 
     <div class="mdl-grid">
       <div class="mdl-cell mdl-cell--middle demo-card-wide mdl-card mdl-shadow--2dp">
-        <div class="mdl-card__title" style="background: url('assets/images/fun_games.png') center / cover;">
+        <div class="mdl-card__title" style="background: url('/assets/images/fun_games.png') center / cover;">
           <h2 class="mdl-card__title-text">Welcome</h2>
         </div>
         <div class="mdl-card__supporting-text">
@@ -68,7 +68,8 @@
       methods: {
         new_game: function (event) {
           this.$http.get("/new_game").then((response) => {
-            window.location.href = "\/play_game\/" + response.data;
+            console.log("/game/" + response.data);
+            window.location.href = "/game/" + response.data;
           });
         }
       }
