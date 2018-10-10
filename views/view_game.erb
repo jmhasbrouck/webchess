@@ -5,8 +5,8 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <title>Welcome</title>
   <link rel="stylesheet" href="/node_modules/material-design-lite/material.min.css">
-  <link rel="stylesheet" href="/styles/cm-chessboard.css"/>
-  <link rel="stylesheet" href="/styles/view_game.css"/>
+  <link rel="stylesheet" href="/styles/cm-chessboard.css" />
+  <link rel="stylesheet" href="/styles/view_game.css" />
   <script src="/node_modules/material-design-lite/material.min.js"></script>
   <script src="/node_modules/vue/dist/vue.js"></script>
   <script src="/node_modules/vue-resource/dist/vue-resource.js"></script>
@@ -16,77 +16,93 @@
 
 <body id="sample">
   <div id="app" class="mdl-layout mdl-js-layout">
-    <div id="board" class="board">
-      Waiting to connect!
+    <div class="mdl-grid">
+      <div id="big_card" class="mdl-cell mdl-cell--middle demo-card-wide mdl-card mdl-shadow--2dp">
+        <div id="board" class="board">
+          Waiting to connect!
+        </div>
+        <h3 id="output_h3"></h3>
+      </div>
     </div>
   </div>
+
   <script type="module">
-    import { INPUT_EVENT_TYPE, MOVE_INPUT_MODE, COLOR, Chessboard } from "/node_modules/cm-chessboard/src/cm-chessboard/Chessboard.js"
-    
+    import { INPUT_EVENT_TYPE, MOVE_INPUT_MODE, COLOR, MARKER_TYPE, Chessboard } from "/node_modules/cm-chessboard/src/cm-chessboard/Chessboard.js"
+
     let game_id_hash = window.location.href.split('/').reverse()[0]
     var board = null
     var orientation = null
 
     var chess = new Chess()
+    function updateTurn() {
+      if (chess.in_checkmate()) {
+        document.getElementById("output_h3").innerHTML = "Checkmate!".fontcolor("red");
+      } else if (chess.turn() === "w" && orientation === COLOR.white ||
+          chess.turn() === "b" && orientation === COLOR.black) {
+        document.getElementById("output_h3").innerHTML = "Its your turn!".fontcolor("green");
+      } else {
+        document.getElementById("output_h3").innerHTML = "Its not your turn".fontcolor("black")
+      }
+    }
     function inputHandler(event) {
       console.log("event", event)
+      var result = true
       if (event.type === INPUT_EVENT_TYPE.moveDone) {
         const move = { from: event.squareFrom, to: event.squareTo }
-        const result = chess.move(move)
+        result = chess.move(move)
         if (result) {
-          let obj = {__type: "put_fen", hash: game_id_hash, fen: chess.fen()}
+          let obj = { __type: "put_fen", hash: game_id_hash, fen: chess.fen() }
           ws.send(JSON.stringify(obj))
         } else {
           console.warn("invalid move", move)
         }
-        return result
-      } else {
-        return true
       }
+      return result
     }
-    var ws       = new WebSocket('ws://' + window.location.host + '/connect');
-        ws.onopen    = function()  { 
-          console.log('websocket opened');
-          let obj = {__type: "connect", hash: game_id_hash};
-          ws.send(JSON.stringify(obj))
-        };
-        ws.onclose   = function()  {
-          console.log('websocket closed'); 
-        }
-        ws.onmessage = function(m) {
-          console.log('websocket message: ' +  m.data);
-          
-          let data = JSON.parse(m.data)
-          if (data["color"] !== null && data["color"] !== "observer") {
-            orientation = data["color"] === "white" ? COLOR.white : COLOR.black;
-          }
-          let fen = data["fen"];
-          if (fen !== null) {
-            if (chess.validate_fen(fen)) {
-              chess.load(fen)
-              if (board !== null) {
-                board.setPosition(fen)
-                if (orientation === COLOR.white || orientation === COLOR.black) {
-                  board.enableMoveInput(inputHandler, orientation);
-                }
-              }
-            } else {
-              alert("Error! Invalid Notation!")
-            }
-          }
-          if (board === null) {
-            board = new Chessboard(document.getElementById("board"), {
-              position: chess.fen(),
-              sprite: { url: "/assets/images/chessboard-sprite.svg" },
-              orientation: orientation,
-              moveInputMode: MOVE_INPUT_MODE.dragPiece
-            })
-            document.getElementById("board").innerHTML = ""
-            if (orientation === COLOR.white) {
+    var ws = new WebSocket('ws://' + window.location.host + '/connect');
+    ws.onopen = function () {
+      console.log('websocket opened');
+      let obj = { __type: "connect", hash: game_id_hash };
+      ws.send(JSON.stringify(obj))
+    };
+    ws.onclose = function () {
+      console.log('websocket closed');
+    }
+    ws.onmessage = function (m) {
+      console.log('websocket message: ' + m.data);
+
+      let data = JSON.parse(m.data)
+      if ("color" in data && data["color"] !== "observer") {
+        orientation = data["color"] === "white" ? COLOR.white : COLOR.black;
+      }
+      let fen = data["fen"];
+      if (fen !== null) {
+        if (chess.validate_fen(fen)) {
+          chess.load(fen)
+          if (board !== null) {
+            board.setPosition(fen)
+            if (orientation === COLOR.white || orientation === COLOR.black) {
               board.enableMoveInput(inputHandler, orientation);
             }
           }
-        };
+        } else {
+          alert("Error! Invalid Notation!")
+        }
+      }
+      if (board === null) {
+        board = new Chessboard(document.getElementById("board"), {
+          position: chess.fen(),
+          responsive: true,
+          sprite: { url: "/assets/images/chessboard-sprite.svg" },
+          orientation: orientation,
+          moveInputMode: MOVE_INPUT_MODE.dragPiece
+        })
+        document.getElementById("board").innerHTML = ""
+        board.enableMoveInput(inputHandler, orientation);
+      }
+      updateTurn()
+    };
+    updateTurn() 
   </script>
 </body>
 
