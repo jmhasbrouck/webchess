@@ -6,7 +6,7 @@ def DBClientFactory
   @_dbclient.query('USE mydb;')
   @_dbclient.query("CREATE TABLE IF NOT EXISTS games
                     (game_id INT AUTO_INCREMENT PRIMARY KEY,
-                    base64_hash VARCHAR(6) UNIQUE,
-                    moves_json MEDIUMTEXT);")
+                    base32_hash VARCHAR(6) UNIQUE,
+                    forsyth_edwards_notation  MEDIUMTEXT);")
   @_dbclient
 end

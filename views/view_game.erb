@@ -17,11 +17,16 @@
 <body id="sample">
   <div id="app" class="mdl-layout mdl-js-layout">
     <div id="board" class="board">
+      Waiting to connect!
     </div>
   </div>
   <script type="module">
     import { INPUT_EVENT_TYPE, MOVE_INPUT_MODE, COLOR, Chessboard } from "/node_modules/cm-chessboard/src/cm-chessboard/Chessboard.js"
     
+    let game_id_hash = window.location.href.split('/').reverse()[0]
+    var board = null
+    var orientation = null
+
     var chess = new Chess()
     function inputHandler(event) {
       console.log("event", event)
@@ -29,17 +34,8 @@
         const move = { from: event.squareFrom, to: event.squareTo }
         const result = chess.move(move)
         if (result) {
-          event.chessboard.disableMoveInput()
-          setTimeout(() => {
-            event.chessboard.setPosition(chess.fen())
-            const possibleMoves = chess.moves({ verbose: true })
-            if (possibleMoves.length > 0) {
-              const randomMove = possibleMoves[random(0, possibleMoves.length - 1)]
-              chess.move({ from: randomMove.from, to: randomMove.to })
-              event.chessboard.enableMoveInput(inputHandler, COLOR.white)
-              event.chessboard.setPosition(chess.fen())
-            }
-          })
+          let obj = {__type: "put_fen", hash: game_id_hash, fen: chess.fen()}
+          ws.send(JSON.stringify(obj))
         } else {
           console.warn("invalid move", move)
         }
@@ -48,14 +44,49 @@
         return true
       }
     }
-
-    const board = new Chessboard(document.getElementById("board"), {
-      position: chess.fen(),
-      sprite: { url: "/assets/images/chessboard-sprite.svg" },
-      orientation: COLOR.white,
-      moveInputMode: MOVE_INPUT_MODE.dragPiece
-    })
-    board.enableMoveInput(inputHandler, COLOR.white)
+    var ws       = new WebSocket('ws://' + window.location.host + '/connect');
+        ws.onopen    = function()  { 
+          console.log('websocket opened');
+          let obj = {__type: "connect", hash: game_id_hash};
+          ws.send(JSON.stringify(obj))
+        };
+        ws.onclose   = function()  {
+          console.log('websocket closed'); 
+        }
+        ws.onmessage = function(m) {
+          console.log('websocket message: ' +  m.data);
+          
+          let data = JSON.parse(m.data)
+          if (data["color"] !== null && data["color"] !== "observer") {
+            orientation = data["color"] === "white" ? COLOR.white : COLOR.black;
+          }
+          let fen = data["fen"];
+          if (fen !== null) {
+            if (chess.validate_fen(fen)) {
+              chess.load(fen)
+              if (board !== null) {
+                board.setPosition(fen)
+                if (orientation === COLOR.white || orientation === COLOR.black) {
+                  board.enableMoveInput(inputHandler, orientation);
+                }
+              }
+            } else {
+              alert("Error! Invalid Notation!")
+            }
+          }
+          if (board === null) {
+            board = new Chessboard(document.getElementById("board"), {
+              position: chess.fen(),
+              sprite: { url: "/assets/images/chessboard-sprite.svg" },
+              orientation: orientation,
+              moveInputMode: MOVE_INPUT_MODE.dragPiece
+            })
+            document.getElementById("board").innerHTML = ""
+            if (orientation === COLOR.white) {
+              board.enableMoveInput(inputHandler, orientation);
+            }
+          }
+        };
   </script>
 </body>
 
